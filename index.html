@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Arduino IMU Monitor</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    button { margin-right: 10px; padding: 6px 12px; }
+    table { border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; font-size: 12px; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Arduino IMU Monitor</h1>
+  <p>
+    <button onclick="sendCommand('start')">START</button>
+    <button onclick="sendCommand('stop')">STOP</button>
+  </p>
+  <p id="status"></p>
+
+  <table id="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>t_ms</th>
+        <th>ax</th>
+        <th>ay</th>
+        <th>az</th>
+        <th>received_at</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+async function sendCommand(cmd) {
+  const url = cmd === 'start' ? '/start' : '/stop';
+  try {
+    const resp = await fetch(url, { method: 'POST' });
+    const data = await resp.json();
+    document.getElementById('status').textContent = 'Command: ' + data.status;
+  } catch (e) {
+    document.getElementById('status').textContent = 'Error sending command';
+  }
+}
+
+async function fetchData() {
+  try {
+    const resp = await fetch('/data');
+    const payload = await resp.json();
+    const rows = payload.rows || [];
+    const tbody = document.querySelector('#data-table tbody');
+    tbody.innerHTML = '';
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const tr = document.createElement('tr');
+
+      const idx = document.createElement('td');
+      idx.textContent = i + 1;
+      tr.appendChild(idx);
+
+      const t = document.createElement('td');
+      t.textContent = r.t_ms;
+      tr.appendChild(t);
+
+      const ax = document.createElement('td');
+      ax.textContent = r.ax;
+      tr.appendChild(ax);
+
+      const ay = document.createElement('td');
+      ay.textContent = r.ay;
+      tr.appendChild(ay);
+
+      const az = document.createElement('td');
+      az.textContent = r.az;
+      tr.appendChild(az);
+
+      const ts = document.createElement('td');
+      if (r.received_at !== undefined) {
+        ts.textContent = new Date(r.received_at * 1000).toLocaleTimeString();
+      } else {
+        ts.textContent = '';
+      }
+      tr.appendChild(ts);
+
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    // ignore fetch errors
+  }
+}
+
+// poll every 500 ms
+setInterval(fetchData, 500);
+fetchData();
+</script>
+</body>
+</html>
