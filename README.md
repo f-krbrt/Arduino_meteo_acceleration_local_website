@@ -1,13 +1,13 @@
 # Smart Node with Local Alarm and Web View (Project 1)
 
-Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vibrations et de la température. [cite_start]Le système utilise une approche "Gateway" : l'Arduino gère les capteurs et les alarmes locales, tandis qu'un serveur Python FastAPI expose les données sur une interface Web interactive[cite: 31, 32].
+Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vibrations et de la température. [cite_start]Le système utilise une approche "Gateway" : l'Arduino gère les capteurs et les alarmes locales, tandis qu'un serveur Python FastAPI expose les données sur une interface Web interactive
 
 ## 📋 Fonctionnalités
 
 * **Surveillance de l'environnement** : Lecture de la température et de l'humidité via le capteur DHT20 toutes les 2 secondes
 * **Détection de chocs** : Analyse de l'accélération (IMU) à une fréquence de 10 Hz (100ms) pour identifier les événements de choc
 * **Logique d'alarme locale** :
-    * L'alarme se déclenche si la température dépasse 30°C ou si plus de 10 chocs sont détectés
+    * L'alarme se déclenche si la température dépasse 30°C ou si plus de 10 chocs sont détectés (supposé être en moins de M secondes mais j'ai pas eu le temps d'implémenter ca, je pensais faie une liste fifo ou un dictionaire pour pouvoir supprimer les chock au fur et a mesure que le temps passe)
     * Indication visuelle (LED clignotante) et sonore (buzzer intermittent) via une machine à états non-bloquante
 * **Contrôle par bouton** : Un appui court sur le bouton physique permet d'acquitter l'alarme et de réinitialiser le compteur de chocs
 * **Interface Web** : Affichage en temps réel des mesures (T, H, chocs, état de l'alarme) et commandes à distance (START/STOP)
@@ -16,7 +16,7 @@ Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vi
 
 ### Arduino (Nœud local)
 * **Capteurs** : IMU (LSM9DS1) et DHT20
-* **Actuateurs** : LED (Pin 13) et Buzzer (Pin 2)
+* **Actuateurs** : LED et Buzzer
 * **Communication** : Envoi de données structurées en série au format `key=value` (ex: `t=..., T=..., H=..., shock_count=..., alarm=...`)
 
 ### Python Gateway (FastAPI)
@@ -38,3 +38,10 @@ Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vi
 1. Installez les dépendances nécessaires :
    ```bash
    pip install fastapi uvicorn pyserial
+
+## Lancement 
+1. Lancer le programme python :
+   ```bash
+   python main.py
+2. Ouvrez sur le navigateur : http://127.0.0.1:8000
+   
