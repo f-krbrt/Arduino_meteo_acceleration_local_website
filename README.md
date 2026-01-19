@@ -28,7 +28,7 @@ Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vi
 ### Frontend (HTML/JS)
 * Interface statique utilisant `fetch` pour rafraîchir les données toutes les 500ms sans recharger la page.
 
-## 🚀 Installation
+## 📥 Installation
 
 ### 1. Configuration Arduino
 1. Installez les bibliothèques `Arduino_LSM9DS1` et `Arduino_Lib_DHT20` via le Library Manager.
@@ -39,7 +39,7 @@ Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vi
    ```bash
    pip install fastapi uvicorn pyserial
 
-## Lancement 
+## 🚀 Lancement 
 1. Lancer le programme python :
    ```bash
    python main.py
