@@ -23,11 +23,11 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>t_ms</th>
-        <th>ax</th>
-        <th>ay</th>
-        <th>az</th>
-        <th>received_at</th>
+        <th>Time</th>
+        <th>Temperature</th>
+        <th>Humidity</th>
+        <th>Shocks counter</th>
+        <th>alarm</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -52,30 +52,33 @@ async function fetchData() {
     const rows = payload.rows || [];
     const tbody = document.querySelector('#data-table tbody');
     tbody.innerHTML = '';
+
+    
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const tr = document.createElement('tr');
 
+      // for a new row ?
       const idx = document.createElement('td');
       idx.textContent = i + 1;
       tr.appendChild(idx);
 
+      //Temperatur
       const t = document.createElement('td');
-      t.textContent = r.t_ms;
+      t.textContent = r.T
       tr.appendChild(t);
 
-      const ax = document.createElement('td');
-      ax.textContent = r.ax;
-      tr.appendChild(ax);
+      // humidity
+      const h = document.createElement('td');
+      h.textContent = r.H
+      tr.appendChild(h);
 
-      const ay = document.createElement('td');
-      ay.textContent = r.ay;
-      tr.appendChild(ay);
+      //counter of shocks
+      const sc = document.createElement('td');
+      sc.textContent = r.shock_count
+      tr.appendChild(sc);
 
-      const az = document.createElement('td');
-      az.textContent = r.az;
-      tr.appendChild(az);
-
+      // to get time i guess
       const ts = document.createElement('td');
       if (r.received_at !== undefined) {
         ts.textContent = new Date(r.received_at * 1000).toLocaleTimeString();

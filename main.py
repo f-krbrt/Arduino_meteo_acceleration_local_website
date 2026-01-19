@@ -64,9 +64,11 @@ def serial_reader_loop():
 
             row = {
                 "t_ms": vals.get("t_ms"),
-                "ax": vals.get("ax"),
-                "ay": vals.get("ay"),
-                "az": vals.get("az"),
+                "T": vals.get("T"),
+                "H": vals.get("H"),
+                "shock_count": vals.get("shock_count"),
+                "alarm": vals.get("alarm"),
+                
                 "received_at": time.time(),
             }
         except Exception:

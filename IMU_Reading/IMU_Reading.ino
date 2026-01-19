@@ -89,6 +89,7 @@ void buttonCommand() {
   }
 }
 
+/*
 void sendIMUSample(unsigned long now) {
   float ax, ay, az;
   if (!IMU.accelerationAvailable()) {
@@ -104,6 +105,7 @@ void sendIMUSample(unsigned long now) {
   Serial.print(",az=");
   Serial.println(az, 4);
 }
+*/
 
 void sendData(unsigned long now){
 
