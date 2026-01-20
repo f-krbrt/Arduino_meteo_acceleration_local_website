@@ -58,10 +58,21 @@ async function fetchData() {
       const r = rows[i];
       const tr = document.createElement('tr');
 
+    
       // for a new row ?
       const idx = document.createElement('td');
       idx.textContent = i + 1;
       tr.appendChild(idx);
+
+      // to get time i guess
+      const ts = document.createElement('td');
+      if (r.received_at !== undefined) {
+        ts.textContent = new Date(r.received_at * 1000).toLocaleTimeString();
+      } else {
+        ts.textContent = '';
+      }
+      tr.appendChild(ts);
+
 
       //Temperatur
       const t = document.createElement('td');
@@ -78,14 +89,13 @@ async function fetchData() {
       sc.textContent = r.shock_count
       tr.appendChild(sc);
 
-      // to get time i guess
-      const ts = document.createElement('td');
-      if (r.received_at !== undefined) {
-        ts.textContent = new Date(r.received_at * 1000).toLocaleTimeString();
-      } else {
-        ts.textContent = '';
-      }
-      tr.appendChild(ts);
+      //counter of shocks
+      const al = document.createElement('td');
+      al.textContent = r.alarm
+      tr.appendChild(al);
+
+
+
 
       tbody.appendChild(tr);
     }

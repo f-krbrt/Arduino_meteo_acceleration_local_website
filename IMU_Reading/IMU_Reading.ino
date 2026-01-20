@@ -1,24 +1,25 @@
 #include <Arduino_LSM9DS1.h>
-#include <Arduino_Lib_DHT20.h>
+#include <Wire.h>
+#include "DHT20.h"
 
-//Constantes
-const unsigned long SAMPLE_PERIOD_MS = 100;  // 10 Hz acc
-const unsigned long DHT_PERIOD = 2000; //temp
-const float ACC_THRESHOLD = 1.5;
-const float TEMP_THRESHOLD = 30.0;
+const unsigned long SAMPLE_PERIOD_MS = 100;
+const unsigned long DHT_PERIOD = 2000;
+const float ACC_THRESHOLD = 1.2;
+const float TEMP_THRESHOLD = 28.0;
 const float M_last_seconds = 10;
 
-//Pins
-const int PIN_LED = 13;
-const int PIN_BUZZER = 2;
-const int PIN_BUTTON = 3;
 
-bool recording = false;  // set by START/STOP commands from PC
+const int PINLED = A6;
+const int PIN_BUZZER = 12;
+const int PIN_BUTTON = A7;
 
-//Var
+bool recording = false;
+
+
 unsigned long lastSampleTime_acc = 0;
 unsigned long lastDHT = 0;
 int shock_count = 0;
+unsigned long lasTimeAlarmOn = 0;
 
 float lastTemperature = 0;
 float lastHumidity = 0;
@@ -30,14 +31,14 @@ DHT20 dht;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PIN_LED, OUTPUT);
+
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_BUZZER, OUTPUT);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 
-  IMU.begin();
-  dht.begin();
 
-/*
+
+
   while (!Serial) {
   }
   if (!IMU.begin()) {
@@ -46,7 +47,10 @@ void setup() {
     }
   }
   Serial.println("IMU ready. Waiting for START / STOP commands.");
-*/
+
+  Wire.begin();
+  IMU.begin();
+  dht.begin();
 }
 
 
@@ -83,7 +87,7 @@ void handleSerialCommands() {
 }
 
 void buttonCommand() {
-  if ((digitalRead(PIN_BUTTON) == LOW) && alarm == true) {
+  if (digitalRead(PIN_BUTTON) == LOW) {
     shock_count = 0;
     alarm = false;
   }
@@ -107,7 +111,7 @@ void sendIMUSample(unsigned long now) {
 }
 */
 
-void sendData(unsigned long now){
+void sendData(unsigned long now) {
 
   Serial.print("t=");
   Serial.print(now);
@@ -117,33 +121,56 @@ void sendData(unsigned long now){
   Serial.print(lastHumidity);
   Serial.print(", shock_count=");
   Serial.print(shock_count);
-  Serial.print(", alarm");
-  Serial.print(alarm);
-
+  Serial.print(", alarm=");
+  Serial.println(alarm);
 }
 
-void check_over_speed(){
+
+
+
+
+void check_over_speed() {
+  //Serial.println("on est dans le check_over_speed");
   float ax, ay, az;
   if (!IMU.accelerationAvailable()) {
     return;
   }
   IMU.readAcceleration(ax, ay, az);
-  if (sqrt(ax*ax + ay*ay + az*az)> ACC_THRESHOLD ) {
+  //Serial.println("voici la valeur de l'acc : ");
+  //Serial.println(sqrt(ax * ax + ay * ay + az * az));
+  if (sqrt(ax * ax + ay * ay + az * az) > ACC_THRESHOLD) {
     shock_count++;
+    //Serial.println("shock count :");
+    //Serial.print(shock_count);
   }
 }
 
-void check_temperature(){
+void check_temperature() {
   dht.read();
   lastTemperature = dht.getTemperature();
   lastHumidity = dht.getHumidity();
 }
 
 
-void setAlarmOn(unsigned long now){
-  digitalWrite(PIN_LED, (now/200)%2);
-  if ((now / 500) % 2) tone(PIN_BUZZER, 1000, 50);
+
+
+void setAlarmOn(unsigned long now) {
+  digitalWrite(PINLED, HIGH);
+
+  if (now - lasTimeAlarmOn >= 350){
+    tone(PIN_BUZZER, 1000, 50);
+    lasTimeAlarmOn = now;
+  }
+
+  //if ((now / 500) % 2) tone(PIN_BUZZER, 1000, 50);
 }
+
+void setAlarmOff() {
+  digitalWrite(PINLED, LOW);
+  //le buzzer s'arrete tout seul
+}
+
+
 
 
 
@@ -152,12 +179,10 @@ void loop() {
   unsigned long now = millis();
   handleSerialCommands();
   buttonCommand();
-/*
-  char c = (char)Serial.read();
+
   if (!recording) {
     return;
   }
-*/
 
   //Check Over Speed
   if (now - lastSampleTime_acc >= SAMPLE_PERIOD_MS) {
@@ -170,9 +195,10 @@ void loop() {
   }
 
   //Check temperature
-  if (now - lastDHT > DHT_PERIOD){
+  if (now - lastDHT > DHT_PERIOD) {
     lastDHT = now;
     check_temperature();
+    sendData(now);
   }
 
   if (lastTemperature > TEMP_THRESHOLD) {
@@ -180,33 +206,9 @@ void loop() {
   }
 
   //Activation de l'alarme (ou désactivation)
-  if (alarm == true){
+  if (alarm == true) {
     setAlarmOn(now);
   } else {
-    digitalWrite(PIN_LED, LOW);
+    setAlarmOff();
   }
-
-  if (now - lastDHT > DHT_PERIOD){
-    sendData(now);
-  }
-  
-  
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
