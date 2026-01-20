@@ -7,8 +7,13 @@ const unsigned long DHT_PERIOD = 2000;
 const float ACC_THRESHOLD = 1.2;
 const float TEMP_THRESHOLD = 28.0;
 const float M_last_seconds = 10;
+const int n_shock_max = 10;
 
+// Pour faire la pause apres avoir appuyé sur le bouton
+const int time_break = 5000;
+unsigned long start_break =0;
 
+// pins
 const int PINLED = A6;
 const int PIN_BUZZER = 12;
 const int PIN_BUTTON = A7;
@@ -86,10 +91,11 @@ void handleSerialCommands() {
   }
 }
 
-void buttonCommand() {
+void buttonCommand(unsigned long now) {
   if (digitalRead(PIN_BUTTON) == LOW) {
     shock_count = 0;
     alarm = false;
+    start_break = now;
   }
 }
 
@@ -135,6 +141,10 @@ void check_over_speed() {
   if (!IMU.accelerationAvailable()) {
     return;
   }
+
+
+
+
   IMU.readAcceleration(ax, ay, az);
   //Serial.println("voici la valeur de l'acc : ");
   //Serial.println(sqrt(ax * ax + ay * ay + az * az));
@@ -178,7 +188,7 @@ void setAlarmOff() {
 void loop() {
   unsigned long now = millis();
   handleSerialCommands();
-  buttonCommand();
+  buttonCommand(now);
 
   if (!recording) {
     return;
@@ -188,9 +198,8 @@ void loop() {
   if (now - lastSampleTime_acc >= SAMPLE_PERIOD_MS) {
     lastSampleTime_acc = now;
     check_over_speed();
-    //sendIMUSample(now);
   }
-  if (shock_count >= 10) {
+  if (shock_count >= n_shock_max) {
     alarm = true;
   }
 
@@ -205,8 +214,12 @@ void loop() {
     alarm = true;
   }
 
+  if (lastTemperature < TEMP_THRESHOLD && shock_count < n_shock_max) {
+    alarm = false;
+  }
+
   //Activation de l'alarme (ou désactivation)
-  if (alarm == true) {
+  if (alarm == true && (now - start_break)>time_break) {
     setAlarmOn(now);
   } else {
     setAlarmOff();
