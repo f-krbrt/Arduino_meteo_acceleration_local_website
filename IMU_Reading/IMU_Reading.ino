@@ -23,11 +23,16 @@ const int n_shock_max = 10;
 const int time_break = 5000;
 unsigned long start_break =0;
 
+//variable pour arreter le systeme si on double clique sur le bouton en moins en 0.5 secondes
+unsigned long period_double_tap_btn = 2000;
+unsigned long pause_drop_btn = 0;
+
 // pins
 const int PINLED = A6;
 const int PIN_BUZZER = 12;
 const int PIN_BUTTON = A7;
 
+//Var essentiel
 bool recording = false;
 bool alarm = false;
 
@@ -49,8 +54,8 @@ String commandBuffer = "";
 
 DHT20 dht;
 
-///// Donnees pour la liste FIFO/////
 
+///// Donnees pour la liste FIFO/////
 
 //Nombre de chocs (n=5) maximum en M secondes
 const int n_chocs = 5;
@@ -125,6 +130,25 @@ void handleSerialCommands() {
 
 void buttonCommand(unsigned long now) {
   if (digitalRead(PIN_BUTTON) == LOW) {
+    
+    /*
+
+    Le test "now - start_break < period_double_tap_btn" permet de savoir si on a déjà appuyé sur le bouton quelques 2 secondes (period_double_tap_btn secondes) auparavant.
+    Le second appuie est alors interprété comme l'action d'arreter le système  
+
+    Le test "now - pause_drop_btn > 300" est nécessaire. En effet sans ce test, durant un appuie sur le bouton on parcours plusieurs fois la boucle loop.
+    et donc plusieurs fois cette fonction. Ce qui fait qu'un seul appui arrete directement le systeme.
+    Ici on considère que l'appui dure moins de 300 ms, ce qui permet de séparer 2 appuie distincts.
+
+
+    */
+
+    if (now - start_break < period_double_tap_btn && now - pause_drop_btn > 300){
+      recording = false;
+      Serial.println("Le système va s'arrêter. ACK STOP !");
+    }
+
+    pause_drop_btn = now;
     shock_count = 0;
     alarm = false;
     start_break = now;
@@ -224,7 +248,9 @@ void delete_queue() {
 
 
 
-
+//////////////////////////////////////////////
+/////////////////////Loop/////////////////////
+//////////////////////////////////////////////
 
 
 void loop() {
