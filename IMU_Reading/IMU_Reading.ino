@@ -61,15 +61,16 @@ DHT20 dht;
 const int n_chocs = 5;
 const int m_secs = 10000;
 
+
 float liste_chocs[n_chocs];
 int head = 0;
 int tail = 0;
 
 
 
-///////////////////////////////////
-////////////Fonctions//////////////
-///////////////////////////////////
+
+//-------------Fonctions-----------------
+//---------------------------------------
 
 void setup() {
   Serial.begin(115200);
@@ -133,14 +134,15 @@ void buttonCommand(unsigned long now) {
     
     /*
 
+    1 clic sur le bouton -> l'alarme se coupe pendant quelques secondes
+    2 clics sur le bouton -> Le système s'éteint
+
     Le test "now - start_break < period_double_tap_btn" permet de savoir si on a déjà appuyé sur le bouton quelques 2 secondes (period_double_tap_btn secondes) auparavant.
     Le second appuie est alors interprété comme l'action d'arreter le système  
 
     Le test "now - pause_drop_btn > 300" est nécessaire. En effet sans ce test, durant un appuie sur le bouton on parcours plusieurs fois la boucle loop.
     et donc plusieurs fois cette fonction. Ce qui fait qu'un seul appui arrete directement le systeme.
     Ici on considère que l'appui dure moins de 300 ms, ce qui permet de séparer 2 appuie distincts.
-
-
     */
 
     if (now - start_break < period_double_tap_btn && now - pause_drop_btn > 300){
@@ -157,7 +159,9 @@ void buttonCommand(unsigned long now) {
 
 
 void sendData(unsigned long now) {
-
+  /*
+  Cette fonction envoie les données sous forme de chaine de caratères
+  */
   Serial.print("t=");
   Serial.print(now);
   Serial.print(", T=");
@@ -175,7 +179,6 @@ void sendData(unsigned long now) {
 
 
 void check_over_speed() {
-  //Serial.println("on est dans le check_over_speed");
   float ax, ay, az;
   if (!IMU.accelerationAvailable()) {
     return;
@@ -187,6 +190,9 @@ void check_over_speed() {
 }
 
 void check_temperature() {
+  /*
+  Cette fonction récupère la température et l'humidité mesuré par le capteur dht
+  */
   dht.read();
   lastTemperature = dht.getTemperature();
   lastHumidity = dht.getHumidity();
@@ -196,6 +202,9 @@ void check_temperature() {
 
 
 void setAlarmOn(unsigned long now) {
+  /*
+  Cette fonction active l'alarme (un bip et une LED)
+  */
   digitalWrite(PINLED, HIGH);
 
   if (now - lasTimeAlarmOn >= 350){
@@ -209,12 +218,16 @@ void setAlarmOff() {
   //le buzzer s'arrete tout seul
 }
 
-
-//////////////////////////////////////////////
-///////////Liste FIFO Fonctions///////////////
+//-----------------------------------------
+//------------Liste FIFO Fonctions---------
+//-----------------------------------------
 
 void push(unsigned long now) {
-
+  /*
+  Cette fonction ajoute la dernière valeur d'accélération (seulement si l'acceleration total est supérieur à ACC_THRESHOLD) au tableau liste_choc
+  Elle augmente également le compteur de 1 si le tableau n'est pas rempli
+  A noter que le tableau est une boucle
+  */
   float ax, ay, az;
   if (!IMU.accelerationAvailable()) {
     return;
@@ -234,11 +247,19 @@ void push(unsigned long now) {
 }
 
 float get_tail(){
+  /*
+  Cette fonction récupère la queue de la liste (donc l'élement le plus ancien (et toujours présent évidement) entré dans le tableau)
+  */
   float val_time = liste_chocs[tail];
   return val_time;
 }
 
 void delete_queue() {
+  /*
+  Cette fonction supprime la queue de la liste (donc l'élement le plus ancien (et toujours présent évidement) entré dans le tableau)
+  En réalité l'élément n'est pas supprimé, on incrémente juste l'indice de "queue" pour rendre invisible l'élement précédent
+  Cette fonction décrémente aussi le counter de chocs de un
+  */
   if (shock_count == 0) return;
   tail = (tail + 1) % n_chocs;
   shock_count --;
@@ -248,9 +269,9 @@ void delete_queue() {
 
 
 
-//////////////////////////////////////////////
-/////////////////////Loop/////////////////////
-//////////////////////////////////////////////
+//-------------------------------------------
+//--------------------Loop--------------------
+//--------------------------------------------
 
 
 void loop() {
