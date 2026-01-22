@@ -1,15 +1,15 @@
 # Smart Node with Local Alarm and Web View (Project 1)
 
-Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vibrations et de la température. [cite_start]Le système utilise une approche "Gateway" : l'Arduino gère les capteurs et les alarmes locales, tandis qu'un serveur Python FastAPI expose les données sur une interface Web interactive
+Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vibrations et de la température. Le système utilise une approche "Gateway" : l'Arduino gère les capteurs et les alarmes locales, tandis qu'un serveur Python FastAPI expose les données sur une interface Web interactive
 
 ## 📋 Fonctionnalités
 
 * **Surveillance de l'environnement** : Lecture de la température et de l'humidité via le capteur DHT20 toutes les 2 secondes
 * **Détection de chocs** : Analyse de l'accélération (IMU) à une fréquence de 10 Hz (100ms) pour identifier les événements de choc
 * **Logique d'alarme locale** :
-    * L'alarme se déclenche si la température dépasse 30°C ou si plus de 10 chocs sont détectés (supposé être en moins de M secondes mais j'ai pas eu le temps d'implémenter ca, je pensais faie une liste fifo ou un dictionaire pour pouvoir supprimer les chock au fur et a mesure que le temps passe)
+    * L'alarme se déclenche si la température dépasse 28°C ou si plus de 5 chocs ont été détectés dans les 10 dernière secondes
     * Indication visuelle (LED clignotante) et sonore (buzzer intermittent) via une machine à états non-bloquante
-* **Contrôle par bouton** : Un appui court sur le bouton physique permet d'acquitter l'alarme et de réinitialiser le compteur de chocs
+* **Contrôle par bouton** : Un appui court sur le bouton physique permet d'acquitter l'alarme et de réinitialiser le compteur de chocs. Deux appuis en moins de 2 secondes et espacé de plus 0.3 secondes arretent le système
 * **Interface Web** : Affichage en temps réel des mesures (T, H, chocs, état de l'alarme) et commandes à distance (START/STOP)
 
 ## 🛠️ Architecture Technique
