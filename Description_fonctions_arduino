@@ -1,0 +1,188 @@
+================================================================================
+                   README - Système de Surveillance IMU et Température
+================================================================================
+
+DESCRIPTION DU PROJET
+--------------------------------------------------------------------------------
+Ce programme Arduino surveille les accélérations (chocs) et la température à 
+l'aide d'un capteur IMU (LSM9DS1) et d'un capteur de température/humidité 
+(DHT20). Une alarme se déclenche si des seuils sont dépassés.
+
+
+CONFIGURATION
+--------------------------------------------------------------------------------
+
+Constantes Principales :
+  - SAMPLE_PERIOD_MS (100 ms) : Période d'échantillonnage de l'accéléromètre
+  - DHT_PERIOD (2000 ms) : Période de lecture température/humidité
+  - ACC_THRESHOLD (1.2 g) : Seuil de détection de choc
+  - TEMP_THRESHOLD (28.0°C) : Seuil de température pour alarme
+  - n_chocs (5) : Nombre de chocs maximum autorisés
+  - m_secs (10000 ms) : Fenêtre temporelle pour compter les chocs
+  - time_break (5000 ms) : Durée de pause de l'alarme après appui bouton
+  - period_double_tap_btn (2000 ms) : Délai pour détecter un double-clic
+
+Pins :
+  - PINLED (A6) : LED d'alarme
+  - PIN_BUZZER (12) : Buzzer d'alarme
+  - PIN_BUTTON (A7) : Bouton de contrôle
+
+
+FONCTIONS PRINCIPALES
+--------------------------------------------------------------------------------
+
+setup()
+  Initialise le système :
+  - Configure la communication série (115200 bauds)
+  - Initialise l'IMU et le capteur DHT20
+  - Configure les pins (LED, buzzer, bouton)
+
+loop()
+  Boucle principale qui orchestre le système :
+  - Gère les commandes série
+  - Traite les actions du bouton
+  - Échantillonne l'accéléromètre toutes les 100 ms
+  - Lit la température toutes les 2 secondes
+  - Vérifie les conditions d'alarme
+  - Active/désactive l'alarme selon l'état
+
+
+GESTION DES COMMANDES
+--------------------------------------------------------------------------------
+
+handleSerialCommands()
+  Traite les commandes reçues via le port série :
+  - START : Active l'enregistrement (répond "ACK:START")
+  - STOP : Désactive l'enregistrement (répond "ACK:STOP")
+  - Commande inconnue : Répond "ERR:UNKNOWN_CMD"
+  
+  Subtilité : Buffer limité à 50 caractères pour éviter les débordements 
+  mémoire.
+
+buttonCommand(unsigned long now)
+  Gère les appuis sur le bouton physique avec deux modes :
+  - 1 clic : Met l'alarme en pause pendant 5 secondes et réinitialise le 
+    compteur de chocs
+  - 2 clics rapides (< 2 sec) : Arrête complètement le système
+  
+  Subtilités :
+  - Utilise un délai de 300 ms pour distinguer deux appuis distincts (évite 
+    qu'un seul appui long soit interprété comme double-clic)
+  - Le test "now - pause_drop_btn > 300" empêche la détection multiple durant 
+    un seul appui
+  - Réinitialise shock_count et alarm à chaque appui simple
+
+
+ACQUISITION DE DONNÉES
+--------------------------------------------------------------------------------
+
+check_over_speed()
+  Vérifie si l'accélération dépasse le seuil :
+  - Lit les valeurs x, y, z de l'accéléromètre
+  - Calcule la norme : √(ax² + ay² + az²)
+  - Incrémente shock_count si la norme > ACC_THRESHOLD
+  
+  Note : Fonction simple sans gestion temporelle (commentée dans le code).
+
+check_temperature()
+  Récupère les mesures du capteur DHT20 :
+  - Met à jour lastTemperature
+  - Met à jour lastHumidity
+
+sendData(unsigned long now)
+  Envoie les données formatées via le port série :
+  Format : t=[timestamp], T=[température], H=[humidité], 
+           shock_count=[nb_chocs], alarm=[état]
+
+
+SYSTÈME FIFO DE GESTION DES CHOCS
+--------------------------------------------------------------------------------
+Le système utilise une liste circulaire (FIFO) pour suivre les N derniers 
+chocs dans une fenêtre de M secondes.
+
+push(unsigned long now)
+  Ajoute un nouveau choc dans la liste circulaire :
+  - Lit l'accélération de l'IMU
+  - Si accélération > ACC_THRESHOLD :
+    * Stocke le timestamp dans liste_chocs[head]
+    * Avance head de façon circulaire : (head + 1) % n_chocs
+    * Incrémente shock_count jusqu'à n_chocs max
+    * Si la liste est pleine, avance aussi tail (écrase le plus ancien)
+  
+  Subtilité : Le tableau fonctionne en boucle (modulo) pour réutiliser 
+  l'espace sans réallocation.
+
+get_tail()
+  Retourne le timestamp du choc le plus ancien encore dans la liste.
+  
+  Usage : Permet de vérifier si les chocs sont dans la fenêtre temporelle 
+  de M secondes.
+
+delete_queue()
+  Supprime le choc le plus ancien de la liste :
+  - Avance tail : (tail + 1) % n_chocs
+  - Décrémente shock_count
+  
+  Subtilité : Ne supprime pas physiquement la donnée, mais la rend 
+  "invisible" en déplaçant l'indice. Retourne immédiatement si 
+  shock_count == 0.
+
+
+GESTION DE L'ALARME
+--------------------------------------------------------------------------------
+
+setAlarmOn(unsigned long now)
+  Active l'alarme visuelle et sonore :
+  - Allume la LED (HIGH)
+  - Émet un bip de 50 ms à 1000 Hz toutes les 350 ms
+  
+  Subtilité : Le délai de 350 ms évite un bip continu et crée un signal 
+  intermittent.
+
+setAlarmOff()
+  Désactive l'alarme :
+  - Éteint la LED (LOW)
+  - Le buzzer s'arrête automatiquement
+
+
+LOGIQUE DE DÉTECTION D'ALARME
+--------------------------------------------------------------------------------
+L'alarme se déclenche si :
+  1. >= 5 chocs en 10 secondes : (now - get_tail() < m_secs) && 
+     (shock_count >= n_chocs)
+  2. Température > 28°C : lastTemperature > TEMP_THRESHOLD
+
+L'alarme s'éteint si :
+  - Température < 28°C ET nombre de chocs < 5
+
+Subtilité importante : L'alarme reste bloquée pendant 5 secondes après un 
+appui bouton grâce au test (now - start_break) > time_break.
+
+
+FLUX D'EXÉCUTION DANS loop()
+--------------------------------------------------------------------------------
+1. Traite les commandes série et bouton
+2. Si recording == false, arrête l'exécution
+3. Toutes les 100 ms :
+   - Supprime les chocs hors fenêtre temporelle (> 10 sec)
+   - Ajoute un nouveau choc si détecté
+4. Toutes les 2 secondes :
+   - Lit température/humidité
+   - Envoie les données via série
+5. Vérifie les conditions d'alarme
+6. Active/désactive l'alarme selon l'état
+
+
+REMARQUES TECHNIQUES
+--------------------------------------------------------------------------------
+- Gestion temporelle : Utilise millis() pour éviter les blocages avec delay()
+- Anti-rebond bouton : Délai de 300 ms entre deux détections
+- Mémoire optimisée : Liste circulaire fixe (pas d'allocation dynamique)
+- Sécurité série : Buffer limité à 50 caractères
+
+
+AUTEURS
+--------------------------------------------------------------------------------
+GROUPE 4 : KERBRAT Florian, VIDOR Julian
+
+================================================================================
