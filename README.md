@@ -2,6 +2,7 @@
 
 Ce projet implémente un nœud IoT basé sur Arduino pour la surveillance des vibrations et de la température. Le système utilise une approche "Gateway" : l'Arduino gère les capteurs et les alarmes locales, tandis qu'un serveur Python FastAPI expose les données sur une interface Web interactive
 
+
 ## 📋 Fonctionnalités
 
 * **Surveillance de l'environnement** : Lecture de la température et de l'humidité via le capteur DHT20 toutes les 2 secondes
