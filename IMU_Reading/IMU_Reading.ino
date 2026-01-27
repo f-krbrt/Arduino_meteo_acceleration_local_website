@@ -1,13 +1,10 @@
 
-/*
 
-GROUPE 4 : KERBRAT Florian, VIDOR Julian
-
-*/
 #include <Arduino_LSM9DS1.h>
 #include <Wire.h>
 #include "DHT20.h"
 
+//Period d'echantillonage
 const unsigned long SAMPLE_PERIOD_MS = 100;
 const unsigned long DHT_PERIOD = 2000;
 
@@ -57,7 +54,7 @@ DHT20 dht;
 
 ///// Donnees pour la liste FIFO/////
 
-//Nombre de chocs (n=5) maximum en M secondes
+//Nombre de chocs (n=5) maximum en M = 10 secondes
 const int n_chocs = 5;
 const int m_secs = 10000;
 
@@ -97,7 +94,6 @@ void setup() {
 }
 
 
-// HandleSerialCommands reste inchangé pour l'instant je pense que c'est ok
 void handleSerialCommands() {
   while (Serial.available()) {
     char c = (char)Serial.read();
@@ -133,7 +129,6 @@ void buttonCommand(unsigned long now) {
   if (digitalRead(PIN_BUTTON) == LOW) {
     
     /*
-
     1 clic sur le bouton -> l'alarme se coupe pendant quelques secondes
     2 clics sur le bouton -> Le système s'éteint
 
@@ -282,18 +277,6 @@ void loop() {
   if (!recording) {
     return;
   }
-
-/*
-  //Implémentation des chocs sans la prise en compte du temps imparti de M secondes
-  //Check Over Speed
-  if (now - lastSampleTime_acc >= SAMPLE_PERIOD_MS) {
-    lastSampleTime_acc = now;
-    check_over_speed();
-  }
-  if (shock_count >= n_shock_max) {
-    alarm = true;
-  }
-*/
 
   //Check N chocs en M secondes
   if (now - lastSampleTime_acc >= SAMPLE_PERIOD_MS ){

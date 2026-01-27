@@ -59,12 +59,10 @@ async function fetchData() {
       const tr = document.createElement('tr');
 
     
-      // for a new row ?
       const idx = document.createElement('td');
       idx.textContent = i + 1;
       tr.appendChild(idx);
 
-      // to get time i guess
       const ts = document.createElement('td');
       if (r.received_at !== undefined) {
         ts.textContent = new Date(r.received_at * 1000).toLocaleTimeString();
@@ -74,22 +72,18 @@ async function fetchData() {
       tr.appendChild(ts);
 
 
-      //Temperatur
       const t = document.createElement('td');
       t.textContent = r.T
       tr.appendChild(t);
 
-      // humidity
       const h = document.createElement('td');
       h.textContent = r.H
       tr.appendChild(h);
 
-      //counter of shocks
       const sc = document.createElement('td');
       sc.textContent = r.shock_count
       tr.appendChild(sc);
 
-      //counter of shocks
       const al = document.createElement('td');
       al.textContent = r.alarm
       tr.appendChild(al);
